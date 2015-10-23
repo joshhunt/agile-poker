@@ -31,7 +31,7 @@
    * on the same Wi-Fi network.
    */
 
-//  jsCodeLocation = [NSURL URLWithString:@"http://10.0.12.40:8081/index.ios.bundle?platform=ios&dev=true"];
+
 
   /**
    * OPTION 2
@@ -43,7 +43,21 @@
    * see http://facebook.github.io/react-native/docs/runningondevice.html
    */
 
+  
+  
+  
+  
+  
+   // OPTION 1 - Load from development server
+   // jsCodeLocation = [NSURL URLWithString:@"http://10.0.12.37:8081/index.ios.bundle?platform=ios&dev=true"];
+  
+   // OPTION 2 - Load from pre-bundled file on disk
    jsCodeLocation = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
+  
+  
+  
+  
+  
 
   RCTRootView *rootView = [[RCTRootView alloc] initWithBundleURL:jsCodeLocation
                                                       moduleName:@"Agile"

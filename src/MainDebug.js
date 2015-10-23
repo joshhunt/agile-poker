@@ -9,10 +9,10 @@ const {
   View,
 } = React;
 
-const ACTIVE_CARD_OFFSET = 20;
+const CARD_SIZE = 100;
 const CARD_MARGIN = 10;
-const CARD_WIDTH = 120;
-const CARD_HEIGHT = 160;
+const CARD_WIDTH = CARD_SIZE; // 120;
+const CARD_HEIGHT = CARD_SIZE; // 160;
 const CARD_RADIUS = 3;
 const SPRING_CONFIG = {tension: 80, friction: 3};
 
@@ -23,47 +23,8 @@ class Card extends React.Component {
     this._toggleIsActive = this._toggleIsActive.bind(this);
     this.state = {
       isActive: false,
-      pop: new Animated.Value(0),
+      pop: new Animated.Value(0),  // Initial value.               (step2a: uncomment)
     };
-  }
-
-  componentWillMount() {
-    console.log('componentWillMount for Card!');
-    this.state.dismissY = new Animated.Value(0);
-
-    this.state.dismissResponder = PanResponder.create({
-      // Do we want to listen to pans?
-      onStartShouldSetPanResponder: () => {
-        console.log('asking if ShouldSetPanResponder?', this.state.isActive);
-        return this.state.isActive
-      },
-
-      onPanResponderGrant: () => {
-        Animated.spring(this.props.openVal, {
-          toValue: this.state.dismissY.interpolate({
-            inputRange: [0, 300],
-            outputRange: [1, 0],
-          })
-        }).start();
-      },
-
-      onPanResponderMove: Animated.event(
-        [null, {dy: this.state.dismissY}]
-      ),
-
-      onPanResponderRelease: (e, gestureState) => {
-        if (gestureState.dy > 100) {
-          // If it's moved greater than our threshold, then dismiss :)
-          this._toggleIsActive();
-        } else {
-          // Or, snap it back to it's original (open) state
-          Animated.spring(this.props.openVal, {
-            toValue: 1
-          }).start();
-        }
-      },
-    });
-
   }
 
   _onLongPress() {
@@ -77,7 +38,7 @@ class Card extends React.Component {
 
   _toggleIsActive() {
     console.log('_toggleIsActive for card');
-    var config = {tension: 100, friction: 7};
+    var config = {tension: 30, friction: 7};
 
     // If it's active, close it
     if (this.state.isActive) {
@@ -103,26 +64,18 @@ class Card extends React.Component {
     // Touch handlers
     const handlers = {
       // We're only interested in touches if the card isnt active
-      onStartShouldSetResponder: () => {
-        const permission = true;
-        console.log('asking if ShouldSetResponder?', permission);
-        return permission;
-      },
+      onStartShouldSetResponder: () => !this.state.isActive,
 
       // On touch down
       onResponderGrant: () => {
         console.log('onResponderGrant');
-        if (this.state.isActive) { return };
-
         this._onLongPress()
       },
 
       // On touch up
       onResponderRelease: () => {
         console.log('onResponderRelease');
-
-        // Don't do the depress animation when the card is active
-        if (this.state.isActive) { return };
+        // clearTimeout(this.longTimer);
 
         Animated.spring(this.state.pop, {
           toValue: 0,
@@ -131,12 +84,12 @@ class Card extends React.Component {
 
         this._toggleIsActive();
       }
-    }
+    };
 
     // Make the styles to shrink the container based on the value of pop
     const scaleFactor = this.state.pop.interpolate({
       inputRange: [0, 1],
-      outputRange: [1, .99]
+      outputRange: [1, .92]
     });
     var containerStyles = {
       transform: [{scale: scaleFactor}],
@@ -144,10 +97,14 @@ class Card extends React.Component {
 
     // Create the opening transition styles
     const openVal = this.props.openVal;
-    let innerOpenStyle;
-    let activeTextStyle;
+    let innerOpenStyle = undefined;
     const restLayout = this.props.restLayout || {x: 0, y: 0};
     const containerLayout = this.props.containerLayout || {width: 0, height: 0};
+
+    console.groupCollapsed('Card render prop values:', restLayout.x, restLayout.y, containerLayout.width, containerLayout.height);
+    console.log(restLayout);
+    console.log(containerLayout);
+    console.groupEnd();
 
     if (this.props.dummy) {
       // If this is a 'dummy' card (used just to maintain the layout), make it invisible
@@ -156,22 +113,39 @@ class Card extends React.Component {
 
     } else if (this.state.isActive) {
       // Create the correct styles for when the card is opening
+      console.log('Is not a dummy card');
       innerOpenStyle = [
         styles.cardActive,
+        // {
+        //   left:         openVal.interpolate({inputRange: [0, 1], outputRange: [restLayout.x, 0]}),
+        //   top:          openVal.interpolate({inputRange: [0, 1], outputRange: [restLayout.y, 0]}),
+        //   width:        openVal.interpolate({inputRange: [0, 1], outputRange: [CARD_WIDTH, containerLayout.width]}),
+        //   height:       openVal.interpolate({inputRange: [0, 1], outputRange: [CARD_HEIGHT, containerLayout.height]}),
+        //   margin:       openVal.interpolate({inputRange: [0, 1], outputRange: [CARD_MARGIN, 0]}),
+        //   borderRadius: openVal.interpolate({inputRange: [0, 1], outputRange: [CARD_RADIUS, 0]}),
+        // },
         {
-          left:         openVal.interpolate({inputRange: [0, 1], outputRange: [restLayout.x, ACTIVE_CARD_OFFSET]}),
-          top:          openVal.interpolate({inputRange: [0, 1], outputRange: [restLayout.y, 0]}),
-          width:        openVal.interpolate({inputRange: [0, 1], outputRange: [CARD_WIDTH, (containerLayout.width - (ACTIVE_CARD_OFFSET * 2))]}),
-          height:       openVal.interpolate({inputRange: [0, 1], outputRange: [CARD_HEIGHT, containerLayout.height]}),
-          margin:       openVal.interpolate({inputRange: [0, 1], outputRange: [CARD_MARGIN, 0]}),
-          // borderRadius: openVal.interpolate({inputRange: [0, 1], outputRange: [CARD_RADIUS, 0]}),
-        },
+          left: 0,
+          top: 0,
+          width: containerLayout.width,
+          height: containerLayout.height,
+          margin: 0,
+          borderRadius: 0,
+        }
       ];
 
-      activeTextStyle = {
-        fontSize: openVal.interpolate({inputRange: [0, 1], outputRange: [30, 180]})
-      }
+      console.log('innerOpenStyle:', innerOpenStyle[1]);
+
+      // console.log('Open styles:', innerOpenStyle);
+      // console.log('left from', restLayout.x, 'to', 0);
+      // console.log('top from', restLayout.y, 'to', 0);
+      // console.log('width from', CARD_WIDTH, 'to', containerLayout.width);
+      // console.log('height from', CARD_HEIGHT, 'to', containerLayout.height);
+      // console.log('margin from', CARD_MARGIN, 'to', 0);
+      // console.log('borderRadius from', CARD_RADIUS, 'to', 0);
     }
+
+    const containerStyleCollection = [containerStyles];
 
     return (
       <Animated.View
@@ -179,8 +153,8 @@ class Card extends React.Component {
         onLayout={this.props.onLayout}
         style={[containerStyles, this.state.isActive && styles.cardActive]}>
 
-        <Animated.View style={[styles.card, innerOpenStyle]} {...this.state.dismissResponder.panHandlers}>
-          <Animated.Text style={[styles.cardText, this.state.isActive && activeTextStyle]}>{this.props.value}</Animated.Text>
+        <Animated.View style={[styles.card, innerOpenStyle]}>
+          <Text style={styles.cardText}>{this.props.value}</Text>
         </Animated.View>
 
       </Animated.View>
@@ -195,7 +169,7 @@ export default class Main extends React.Component {
 
   constructor(props) {
     super(props);
-    const cards = ['0', '1', '2', '3', '5', '8']
+    const cards = ['0']
 
     this.state = {
       cards,
@@ -213,7 +187,6 @@ export default class Main extends React.Component {
   }
 
   render() {
-    console.log(' ');
     // Create an array of <Card> items
     const items = this.state.cards.map((key, cardIndex) => {
       let onLayout;
@@ -251,15 +224,15 @@ export default class Main extends React.Component {
           })}
         />
       );
-    });
+    })
 
     // So, when there's an active card
     if (this.state.activeKey) {
 
-      // // Add in a backdrop
-      // items.push(
-      //   <Animated.View key="dark" style={[styles.darkening, {opacity: this.state.openVal}]} />
-      // );
+      // Add in a backdrop
+      items.push(
+        <Animated.View key="dark" style={[styles.darkening, {opacity: 100}]} />
+      );
 
       // And now create a card to animate out
       items.push(
@@ -278,32 +251,31 @@ export default class Main extends React.Component {
 
     }
 
-    console.log('Rendering', items.length, 'items into the main view');
-
     return (
       <View style={styles.container}>
-        <Animated.View style={styles.grid} onLayout={this._onLayout}>
+        <View style={styles.grid} onLayout={this._onLayout}>
           {items}
-        </Animated.View>
+        </View>
       </View>
     );
   }
 }
 
 
-var styles = StyleSheet.create({
+var originalStyles = StyleSheet.create({
   container: {
     flex: 1,
     alignSelf: 'stretch',
     justifyContent: 'center',
     backgroundColor: '#EEEEEE',
-    paddingTop: 64, // push content below nav bar
+    // paddingTop: 64, // push content below nav bar
   },
 
   grid: {
     justifyContent: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
+    flex: 1,
     backgroundColor: '#9b59b6',
   },
 
@@ -327,7 +299,6 @@ var styles = StyleSheet.create({
 
   cardText: {
     textAlign: 'center',
-    fontSize: 30,
   },
 
   cardActive: {
@@ -341,22 +312,55 @@ var styles = StyleSheet.create({
   },
 
   darkening: {
-    backgroundColor: 'rgba(0,0,0,.6)',
+    backgroundColor: 'rgba()',
     position: 'absolute',
     left: 0,
     top: 0,
     right: 0,
     bottom: 0,
   },
+});
 
-  headingText: {
-    fontSize: 30,
-    textAlign: 'center',
+var styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 64, // push content below nav bar
+  },
+  grid: {
+    flex: 1,
+    justifyContent: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    backgroundColor: 'transparent',
+  },
+  card: {
+    width: CARD_SIZE,
+    height: CARD_SIZE,
+    borderRadius: CARD_SIZE / 2,
+    borderWidth: 1,
+    borderColor: 'black',
+    margin: CARD_MARGIN,
+    overflow: 'hidden',
+    backgroundColor: '#2ecc71',
+  },
+  cardActive: {
     position: 'absolute',
-    top: 35,
     left: 0,
+    top: 0,
     right: 0,
-  }
+    bottom: 0,
+    width: undefined, // unset value from styles.card
+    height: undefined, // unset value from styles.card
+    borderRadius: 0, // unset value from styles.card
+  },
+  darkening: {
+    backgroundColor: 'black',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+  },
 });
 
 // rgba(0, 0, 0, 0.2) 0px 1px 2px 0px

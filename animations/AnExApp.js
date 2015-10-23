@@ -113,6 +113,9 @@ class Circle extends React.Component {
     if (this.props.dummy) {
       animatedStyle.opacity = 0;
     } else if (this.state.isActive) {
+
+      console.log('Card render prop values:', this.props.restLayout.x, this.props.restLayout.y, this.props.containerLayout.width, this.props.containerLayout.height);
+
       var innerOpenStyle = [styles.open, {                                 // (step4: uncomment)
         left: openVal.interpolate({inputRange: [0, 1], outputRange: [this.props.restLayout.x, 0]}),
         top: openVal.interpolate({inputRange: [0, 1], outputRange: [this.props.restLayout.y, 0]}),
@@ -121,6 +124,13 @@ class Circle extends React.Component {
         margin: openVal.interpolate({inputRange: [0, 1], outputRange: [CIRCLE_MARGIN, 0]}),
         borderRadius: openVal.interpolate({inputRange: [-0.15, 0, 0.5, 1], outputRange: [0, CIRCLE_SIZE / 2, CIRCLE_SIZE * 1.3, 0]}),
       }];
+
+      console.log('Open styles:', innerOpenStyle);
+
+      for (var key in innerOpenStyle[1]) {
+        var value = innerOpenStyle[1][key];
+        console.log(key, value.__getValue());
+      }
     }
     return (
       <Animated.View
@@ -178,6 +188,7 @@ class AnExApp extends React.Component {
       } else {
         if (!this.state.restLayouts[idx]) {
           var onLayout = function(index, e) {
+            console.log('Triggering card onLayout');
             var layout = e.nativeEvent.layout;
             this.setState((state) => {
               state.restLayouts[index] = layout;
@@ -216,9 +227,15 @@ class AnExApp extends React.Component {
         />
       );
     }
+
+    const onLayout = (e) => {
+      console.log('card onLayout')
+      this.setState({layout: e.nativeEvent.layout})
+    }
+
     return (
       <View style={styles.container}>
-        <View style={styles.grid} onLayout={(e) => this.setState({layout: e.nativeEvent.layout})}>
+        <View style={styles.grid} onLayout={onLayout}>
           {circles}
         </View>
       </View>
